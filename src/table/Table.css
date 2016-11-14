@@ -1,0 +1,23 @@
+/*
+  FixedDataTable has a hardcoded padding on each cell.
+  Since CellMeasuerer only renders the output of our itemRenderer function
+  and not the actual table itself, this padding cannot be taken into account
+  by CellMeasuerer
+  https://github.com/facebook/fixed-data-table/blob/5cbf487dd038c2b741cd0298922c1c30dacb38d7/src/css/style/fixedDataTableCell.css#L25
+*/
+.public_fixedDataTableCell_cellContent {
+  padding: 0;
+}
+
+/*
+  we use a non-configurable class for the header, since the header should
+  always look the same across our application
+*/
+.header-cell {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}

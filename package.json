@@ -1,0 +1,33 @@
+{
+  "name": "flex-data-table",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "@kadira/storybook": "^2.21.0",
+    "enzyme": "2.6.0",
+    "react-addons-test-utils": "15.3.2",
+    "react-scripts": "0.7.0",
+    "sinon": "1.17.6"
+  },
+  "dependencies": {
+    "deep-equal": "1.0.1",
+    "elemental": "0.6.1",
+    "fixed-data-table": "0.6.3",
+    "lodash": "4.17.0",
+    "lorem-ipsum": "1.0.3",
+    "react": "15.3.2",
+    "react-addons-css-transition-group": "15.3.2",
+    "react-addons-shallow-compare": "15.3.2",
+    "react-dom": "15.3.2",
+    "react-virtualized": "8.5.1"
+  },
+  "scripts": {
+    "start": "npm run storybook",
+    "test": "react-scripts test --env=jsdom",
+    "storybook": "start-storybook -p 9009 -s public",
+    "build-storybook": "build-storybook -s public"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  }
+}
