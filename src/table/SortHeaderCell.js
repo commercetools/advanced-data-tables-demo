@@ -1,5 +1,5 @@
 import React, { PropTypes } from 'react'
-import { Cell } from 'fixed-data-table'
+import { Cell } from 'fixed-data-table-2'
 import omit from 'lodash/omit'
 
 export const SortTypes = {

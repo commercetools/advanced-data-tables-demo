@@ -4,7 +4,7 @@ import { Table as FixedDataTable, Column, Cell } from 'fixed-data-table-2'
 import SortHeaderCell, { SortTypes } from './SortHeaderCell'
 import BodyCell from './BodyCell'
 import TableMeasurer from './TableMeasurer'
-import 'fixed-data-table/dist/fixed-data-table.min.css'
+import 'fixed-data-table-2/dist/fixed-data-table.min.css'
 import './Table.css'
 
 const HEADER_HEIGHT = 40
