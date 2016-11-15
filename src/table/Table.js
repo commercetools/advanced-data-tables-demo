@@ -1,6 +1,6 @@
 import React, { PropTypes } from 'react'
 import { AutoSizer, CellMeasurer } from 'react-virtualized'
-import { Table as FixedDataTable, Column, Cell } from 'fixed-data-table'
+import { Table as FixedDataTable, Column, Cell } from 'fixed-data-table-2'
 import SortHeaderCell, { SortTypes } from './SortHeaderCell'
 import BodyCell from './BodyCell'
 import TableMeasurer from './TableMeasurer'

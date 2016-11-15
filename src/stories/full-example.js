@@ -292,11 +292,6 @@ const Wrapper = React.createClass({
             </div>
             <div>
               <h3>{'Columns Definition'}</h3>
-              <Alert type="info">
-                <strong>Info:</strong> If you set <i>"Dynamic Height"</i> or
-                  <i>"Dynamic Width"</i> on a column make sure to also change the
-                  number of rows to force FixedDataTable to update.
-              </Alert>
               {cols.map((col, colIndex) => (
                 <div key={colIndex} style={{
                   border: '1px solid #ccc',
@@ -320,13 +315,6 @@ const Wrapper = React.createClass({
                       type="danger"
                     />
                   </div>
-                  <FormField label="Column Key">
-                    <FormInput
-                      name="key"
-                      value={col.key}
-                      onChange={e => this.handleColChange(e, colIndex)}
-                    />
-                  </FormField>
                   <FormField label="Column Label">
                     <FormInput
                       name="label"
