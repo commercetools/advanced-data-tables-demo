@@ -1,1 +1,22 @@
-# modern-data-tables-demo
+# React Virtualized + FixedDataTable
+> Examples of how to combine React Virtualized and FixedDataTable to build a truly flexible and customizable data table in React.
+
+## Live Playground
+For examples of the table in action, go to https://commercetools.github.io/modern-data-tables-demo/ 👀✨.
+
+OR
+
+To run that demo on your own computer:
+
+Clone this repository
+npm install
+npm run start
+Visit http://localhost:9000/
+
+## Components
+This repository contains some important components that the table is made up of:
+
+- `Table`: composes `CellMeasurer`, `TableMeasurer` and `FixedDataTable`.
+- `TableMeasurer`: Is used for providing FixedDataTable with static column width and row height values. Uses CellMeasurer's measuring callbacks to figure out the column widths and row heights of the whole table.
+- `BodyCell`: Used for rendering a cell. Decoupled from Table.
+- `SortHeaderCell`: Used to render the column header cell when a column is sortable.
