@@ -1,6 +1,8 @@
 # React Virtualized + FixedDataTable
 > Examples of how to combine React Virtualized and FixedDataTable to build a truly flexible and customizable data table in React.
 
+![table in action](https://cl.ly/203l3P1N0u2H/Screen%20Recording%202016-11-17%20at%2011.27%20AM.gif)
+
 ## Live Playground
 For examples of the table in action, go to https://commercetools.github.io/modern-data-tables-demo/ 👀✨.
 
