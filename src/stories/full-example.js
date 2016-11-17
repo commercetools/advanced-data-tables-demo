@@ -1,6 +1,6 @@
 import React, { PropTypes } from 'react'
 import loremIpsum from 'lorem-ipsum'
-import { storiesOf } from '@kadira/storybook';
+import { storiesOf, action } from '@kadira/storybook';
 import sortBy from 'lodash/sortBy'
 import {
   Button,
@@ -11,7 +11,6 @@ import {
   FormRow,
   Row,
   Col,
-  Alert,
 } from 'elemental'
 import Table from '../table/Table';
 import '../styles.min.css';
@@ -61,13 +60,27 @@ const generateValue = ({ dynamicWidth, dynamicHeight }) => {
  * @param  {Number} numberOfRows
  * @return {[Object]}
  */
-const generateItems = (cols, numberOfRows) =>
-  Array.from({ length: numberOfRows }).map(() =>
-    cols.reduce((acc, col) => (
-      { ...acc, [col.key]: generateValue(col) }
-    ), {})
-  )
+const generateItems = (cols, items = [], numberOfRows) => {
+  if (items.length === numberOfRows) return items
+  let newItems = []
+  if (numberOfRows > items.length) {
+    newItems = Array.from({ length: numberOfRows - items.length }).map(() =>
+      cols.reduce((acc, col) => (
+        { ...acc, [col.key]: generateValue(col) }
+      ), {})
+    )
+  } else {
+    newItems = items.slice(0, numberOfRows)
+  }
+  return [...items, ...newItems]
+}
 
+const generateItemsWithChangedColumn = ({ cols, changedCol, items }) => {
+  return items.map(item => ({
+    ...item,
+    [changedCol.key]: generateValue(changedCol)
+  }))
+}
 /**
  * This function gets called for every cell in the table (for every row and
  * column combination). Its return value will be rendered as the cell inside the
@@ -131,8 +144,8 @@ const Wrapper = React.createClass({
       { key: 'column-0', label: 'Column 0', ...defaultColProps },
       { key: 'column-1', label: 'Column 1', ...defaultColProps },
     ]
-    const numberOfRows = 100
-    const items = generateItems(cols, numberOfRows)
+    const numberOfRows = 50
+    const items = generateItems(cols, [], numberOfRows)
     return {
       numberOfRows,
       maxHeight: 500,
@@ -142,39 +155,36 @@ const Wrapper = React.createClass({
       sortedItems: items,
     }
   },
-  itemsHaveChanged: false,
+  resetMeasurementsCache: false,
+  resetColumnCache: false,
   /**
    * Gets called before every render of the Table to find out whether the cells
    * need to be remeasured. If the measurements are not reset the cached cell
    * dimensions will be used.
    * In this demo the measurement cache needs to be reset whenever the dynamic
-   * width/height option is en-/disabled on a column
+   * width/height option is en-/disabled on a column.
+   * Resetting the measurement cache is only necessary when cell contents
+   * have changed their dimensions.
    */
-  measurementResetter ({ resetMeasurements }) {
-    if (this.itemsHaveChanged) {
-      this.itemsHaveChanged = false
+  measurementResetter ({ resetMeasurements, resetMeasurementForColumn }) {
+    if (this.resetColumnCache !== false && this.resetColumnCache >= 0) {
+      action('reset measurements for column')(this.resetColumnCache)
+      resetMeasurementForColumn(this.resetColumnCache)
+      this.resetColumnCache = false
+    }
+    if (this.resetMeasurementsCache) {
+      action('reset all measurements')()
       resetMeasurements()
+      this.resetMeasurementsCache = false
     }
   },
   handleChangeNumberOfRows (e) {
     const numberOfRows = parseInt(e.target.value, 10)
-    const items = generateItems(this.state.cols, numberOfRows)
-    this.itemsHaveChanged = true
+    const items = generateItems(this.state.cols, this.state.items, numberOfRows)
     this.setState({
       items,
       sortedItems: items,
       numberOfRows,
-    })
-  },
-  handleTableDimensionsChange (e) {
-    let items = this.state.items
-    if (e.target.name === 'numberOfRows')
-      items = generateItems(this.state.cols, parseInt(e.target.value, 10))
-    this.itemsHaveChanged = true
-    this.setState({
-      items,
-      sortedItems: items,
-      [e.target.name]: e.target.value,
     })
   },
   handleTableMaxHeightChange (e) {
@@ -183,40 +193,55 @@ const Wrapper = React.createClass({
     })
   },
   handleColChange (e, index) {
+    const { state: { cols } } = this
     let val = e.target.value
-    if (typeof this.state.cols[index][e.target.name] === 'boolean')
+    const column = cols[index]
+    if (typeof column[e.target.name] === 'boolean')
       val = e.target.checked
-    const cols = [
-      ...this.state.cols.slice(0, index),
-      {
-        ...this.state.cols[index],
-        [e.target.name]: val,
-      },
-      ...this.state.cols.slice(index + 1)
+    const changedCol = {
+      ...column,
+      [e.target.name]: val,
+    }
+    const newCols = [
+      ...cols.slice(0, index),
+      changedCol,
+      ...cols.slice(index + 1)
     ]
-    this.handleApplyCols(cols)
-  },
-  handleApplyCols (cols) {
-    const items = generateItems(cols, this.state.numberOfRows)
-    this.itemsHaveChanged = true
-    this.setState({
-      items,
-      sortedItems: items,
-      cols,
-    })
+    this.resetColumnCache = index
+    if (e.target.name === 'dynamicHeight') {
+      // if the column's dynamicHeight setting was changed, we need to
+      // recalculate all row heights, which is the same as recalculating
+      // everything
+      this.resetMeasurementsCache = true
+    }
+    this.handleApplyCols(newCols, changedCol)
   },
   handleAddColumn () {
     const { state: { cols } } = this
     const numberOfCols = cols.length
+    const newCol = {
+      key: `column-${numberOfCols}`,
+      label: `Column ${numberOfCols}`,
+      ...defaultColProps,
+    }
     const newCols = [
       ...cols,
-      {
-        key: `column-${numberOfCols}`,
-        label: `Column ${numberOfCols}`,
-        ...defaultColProps,
-      },
+      newCol,
     ]
-    this.handleApplyCols(newCols)
+    this.handleApplyCols(newCols, newCol)
+  },
+  handleApplyCols (cols, changedCol) {
+    const { state: { items } } = this
+    const newItems = generateItemsWithChangedColumn({
+      cols,
+      changedCol: changedCol,
+      items,
+    })
+    this.setState({
+      items: newItems,
+      sortedItems: newItems,
+      cols,
+    })
   },
   handleRemoveColumn (index) {
     const { state: { cols } } = this
@@ -264,113 +289,142 @@ const Wrapper = React.createClass({
       },
     } = this
     return (
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: '0 16px' }}>
         <Row>
           <Col lg="30%" md="40%" sm="100%">
-            <div style={{
-              padding: '8px 0 0', display: 'inline-block',
-            }}>
-              <h3>{'Table Dimensions Settings'}</h3>
-              <FormRow>
-                <FormField label="Number of Rows" width="one-half">
-                  <FormInput
-                    type="number"
-                    name="numberOfRows"
-                    value={numberOfRows}
-                    onChange={this.handleTableDimensionsChange}
-                  />
-                </FormField>
-                <FormField label="Max Table Height" width="one-half">
-                  <FormInput
-                    type="number"
-                    name="maxHeight"
-                    value={maxHeight}
-                    onChange={this.handleTableDimensionsChange}
-                  />
-                </FormField>
-              </FormRow>
-            </div>
-            <div>
-              <h3>{'Columns Definition'}</h3>
-              {cols.map((col, colIndex) => (
-                <div key={colIndex} style={{
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  padding: '10px',
-                  margin: `0 0 ${colIndex < cols.length - 1 ? '8px' : 0} 0`,
-                  position: 'relative',
-                }}>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      right: '8px',
-                      zIndex: 1,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => this.handleRemoveColumn(colIndex)}
-                  >
-                    <Glyph
-                      icon="x"
-                      type="danger"
-                    />
-                  </div>
-                  <FormField label="Column Label">
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100vh',
+                padding: '16px 0',
+              }}
+            >
+              <div style={{
+                padding: '8px 0 0',
+                flexShrink: 0,
+              }}>
+                <h3>{'Table Dimensions Settings'}</h3>
+                <FormRow>
+                  <FormField label="Number of Rows" width="one-half">
                     <FormInput
-                      name="label"
-                      value={col.label}
-                      onChange={e => this.handleColChange(e, colIndex)}
+                      type="number"
+                      name="numberOfRows"
+                      value={numberOfRows}
+                      onChange={this.handleChangeNumberOfRows}
                     />
                   </FormField>
-                  <div className="inline-controls">
-                    <Checkbox
-                      name="isFixed"
-                      label="Fixed"
-                      checked={col.isFixed}
-                      onChange={e => this.handleColChange(e, colIndex)}
+                  <FormField label="Max Table Height" width="one-half">
+                    <FormInput
+                      type="number"
+                      name="maxHeight"
+                      value={maxHeight}
+                      onChange={this.handleTableMaxHeightChange}
                     />
-                    <Checkbox
-                      name="isSortable"
-                      label="Sortable"
-                      checked={col.isSortable}
-                      onChange={e => this.handleColChange(e, colIndex)}
-                    />
-                    <Checkbox
-                      name="dynamicWidth"
-                      label="Dynamic Width"
-                      checked={col.dynamicWidth}
-                      onChange={e => this.handleColChange(e, colIndex)}
-                    />
-                    <Checkbox
-                      name="dynamicHeight"
-                      label="Dynamic Height"
-                      checked={col.dynamicHeight}
-                      onChange={e => this.handleColChange(e, colIndex)}
-                    />
+                  </FormField>
+                </FormRow>
+              </div>
+              <div
+                style={{
+                  flexGrow: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <h3>{'Columns Definition'}</h3>
+                <div
+                  style={{
+                    flexGrow: 1,
+                    overflowY: 'auto',
+                    padding: '0 8px 0 0',
+                  }}
+                >
+                  {cols.map((col, colIndex) => (
+                    <div
+                      key={colIndex}
+                      style={{
+                        border: '1px solid #ccc',
+                        borderRadius: '5px',
+                        padding: '10px',
+                        margin: `0 0 ${colIndex < cols.length - 1 ? '8px' : 0} 0`,
+                        position: 'relative',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          zIndex: 1,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => this.handleRemoveColumn(colIndex)}
+                      >
+                        <Glyph
+                          icon="x"
+                          type="danger"
+                        />
+                      </div>
+                      <FormField label="Column Label">
+                        <FormInput
+                          name="label"
+                          value={col.label}
+                          onChange={e => this.handleColChange(e, colIndex)}
+                        />
+                      </FormField>
+                      <div className="inline-controls">
+                        <Checkbox
+                          name="isFixed"
+                          label="Fixed"
+                          checked={col.isFixed}
+                          onChange={e => this.handleColChange(e, colIndex)}
+                        />
+                        <Checkbox
+                          name="isSortable"
+                          label="Sortable"
+                          checked={col.isSortable}
+                          onChange={e => this.handleColChange(e, colIndex)}
+                        />
+                        <Checkbox
+                          name="dynamicWidth"
+                          label="Dynamic Width"
+                          checked={col.dynamicWidth}
+                          onChange={e => this.handleColChange(e, colIndex)}
+                        />
+                        <Checkbox
+                          name="dynamicHeight"
+                          label="Dynamic Height"
+                          checked={col.dynamicHeight}
+                          onChange={e => this.handleColChange(e, colIndex)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{ padding: '8px 0' }}>
+                    <Button onClick={this.handleAddColumn}>
+                      <span>{'Add Column'}</span>
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div style={{ padding: '8px 0' }}>
-              <Button onClick={this.handleAddColumn}>
-                <span>{'Add Column'}</span>
-              </Button>
+              </div>
             </div>
           </Col>
           <Col lg="70%" md="60%" sm="100%">
-            <h3>{'Table'}</h3>
-            {this.props.children({
-              numberOfRows: parseInt(numberOfRows, 10),
-              maxHeight: parseInt(maxHeight, 10),
-              cols,
-              items: sortedItems,
-              onSortChange,
-              sortKey,
-              sortDir,
-              handleColumnResize,
-              width,
-              measurementResetter,
-            })}
+            <div style={{ padding: '16px 0' }}>
+              <h3>{'Table'}</h3>
+              {this.props.children({
+                numberOfRows: parseInt(numberOfRows, 10),
+                maxHeight: parseInt(maxHeight, 10),
+                cols,
+                items: sortedItems,
+                onSortChange,
+                sortKey,
+                sortDir,
+                handleColumnResize,
+                width,
+                measurementResetter,
+              })}
+            </div>
           </Col>
         </Row>
       </div>
