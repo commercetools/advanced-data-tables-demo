@@ -10,10 +10,13 @@ OR
 
 To run that demo on your own computer:
 
-Clone this repository
-npm install
-npm run start
-Visit http://localhost:9000/
+```bash
+$ git clone git@github.com:commercetools/modern-data-tables-demo.git
+$ cd modern-data-tables-demo
+$ npm install
+$ npm start
+$ open http://localhost:9000/
+```
 
 ## Components
 This repository contains some important components that the table is made up of:
