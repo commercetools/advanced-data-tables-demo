@@ -4,7 +4,7 @@
 ![table in action](https://cl.ly/203l3P1N0u2H/Screen%20Recording%202016-11-17%20at%2011.27%20AM.gif)
 
 ## Live Playground
-For examples of the table in action, go to https://commercetools.github.io/modern-data-tables-demo/ 👀✨.
+For examples of the table in action, go to https://commercetools.github.io/advanced-data-tables-demo/ 👀✨.
 
 OR
 
